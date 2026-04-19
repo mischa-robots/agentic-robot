@@ -1,0 +1,62 @@
+[package]
+name = "agentic-robot"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+authors = ["Mischa <mischa.robots@gmail.com>"]
+description = "An autonomous robot controlled by AI agent — camera capture, motor control, and web dashboard"
+homepage = "https://mischa-robots.github.io/"
+repository = "https://github.com/mischa-robots/agentic-robot"
+license = "MIT"
+keywords = ["robot", "ai", "autonomous", "vision", "jetson"]
+categories = ["embedded", "science::robotics"]
+readme = "README.md"
+
+[features]
+default = []
+camera = ["dep:opencv"]
+pca9685 = ["robot-control/pca9685"]
+hardware = ["camera", "pca9685"]
+
+[dependencies]
+robot-control = "0.1.0"
+opencv = { version = "0.93", default-features = false, features = ["clang-runtime"], optional = true }
+clap = { version = "4", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+actix-web = "4"
+actix-files = "0.6"
+actix-web-actors = "4"
+actix = "0.13"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "2"
+uuid = { version = "1", features = ["v4"] }
+anyhow = "1"
+base64 = "0.22"
+tokio-util = "0.7"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full", "test-util"] }
+tempfile = "3"
+actix-rt = "2"
+
+[profile.dev]
+incremental = true
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+opt-level = 3
+debug = 0
+panic = "abort"
+strip = "symbols"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+must_use_candidate = "allow"
+doc_markdown = "allow"

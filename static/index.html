@@ -1,0 +1,378 @@
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Copyright (c) 2026 Michael Schaefer <https://github.com/mischa-robots/agentic-robot> -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic Robot — Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+        header {
+            background: #16213e;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #0f3460;
+        }
+        header h1 {
+            font-size: 1.4rem;
+            color: #e94560;
+        }
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .status-online { background: #2ecc71; color: #000; }
+        .status-offline { background: #e74c3c; color: #fff; }
+
+        .container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            height: calc(100vh - 70px);
+        }
+
+        .panel {
+            background: #16213e;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid #0f3460;
+        }
+        .panel h2 {
+            font-size: 1rem;
+            color: #a8dadc;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        .frame-panel {
+            grid-column: 1;
+            grid-row: 1;
+        }
+        .frame-panel img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            background: #000;
+        }
+        .frame-placeholder {
+            width: 100%;
+            aspect-ratio: 8/3;
+            background: #0a0a1a;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            font-size: 1.2rem;
+        }
+
+        .controls-panel {
+            grid-column: 2;
+            grid-row: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .stop-btn {
+            width: 100%;
+            padding: 1.5rem;
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: #e74c3c;
+            color: white;
+            border: 4px solid #c0392b;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.1s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .stop-btn:hover { background: #c0392b; transform: scale(1.02); }
+        .stop-btn:active { transform: scale(0.98); background: #a93226; }
+
+        .status-info {
+            font-size: 0.85rem;
+            line-height: 1.8;
+        }
+        .status-info dt { color: #a8dadc; font-weight: 600; }
+        .status-info dd { color: #ccc; margin-bottom: 0.5rem; }
+
+        .log-panel {
+            grid-column: 1;
+            grid-row: 2;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .log-entries {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+        .log-entry {
+            padding: 0.4rem 0.6rem;
+            border-bottom: 1px solid #0f3460;
+        }
+        .log-entry .timestamp {
+            color: #666;
+            margin-right: 0.5rem;
+        }
+        .log-entry.reasoning { color: #a8dadc; }
+        .log-entry.command { color: #e94560; }
+        .log-entry.system { color: #f39c12; }
+
+        .history-panel {
+            grid-column: 2;
+            grid-row: 2;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .history-entries {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .history-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid #0f3460;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .history-item:hover { background: #1a2744; }
+        .history-item .time { font-size: 0.75rem; color: #666; }
+        .history-item .summary { font-size: 0.8rem; color: #ccc; margin-top: 0.2rem; }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto;
+            }
+            .frame-panel { grid-column: 1; grid-row: 1; }
+            .controls-panel { grid-column: 1; grid-row: 2; }
+            .log-panel { grid-column: 1; grid-row: 3; }
+            .history-panel { grid-column: 1; grid-row: 4; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🤖 Agentic Robot</h1>
+        <span id="status-badge" class="status-badge status-offline">Connecting...</span>
+    </header>
+
+    <div class="container">
+        <div class="panel frame-panel">
+            <h2>📷 Stereo Vision (Left | Right)</h2>
+            <div id="frame-container">
+                <div class="frame-placeholder">Waiting for first frame...</div>
+            </div>
+        </div>
+
+        <div class="panel controls-panel">
+            <button class="stop-btn" id="stop-btn" onclick="emergencyStop()">
+                🛑 STOP
+            </button>
+            <div>
+                <h2>📊 Status</h2>
+                <dl class="status-info" id="status-info">
+                    <dt>Uptime</dt><dd id="s-uptime">—</dd>
+                    <dt>Max Speed</dt><dd id="s-maxspeed">—</dd>
+                    <dt>Watchdog</dt><dd id="s-watchdog">—</dd>
+                    <dt>Last Command</dt><dd id="s-lastcmd">—</dd>
+                    <dt>Last Capture</dt><dd id="s-lastcap">—</dd>
+                    <dt>History Entries</dt><dd id="s-history">—</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="panel log-panel">
+            <h2>🧠 Decision Log</h2>
+            <div class="log-entries" id="log-entries">
+                <div class="log-entry system">
+                    <span class="timestamp">—</span>
+                    Waiting for agent activity...
+                </div>
+            </div>
+        </div>
+
+        <div class="panel history-panel">
+            <h2>📜 History</h2>
+            <div class="history-entries" id="history-entries">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const POLL_INTERVAL = 2000;
+        let lastHistoryCount = 0;
+
+        async function emergencyStop() {
+            try {
+                const btn = document.getElementById('stop-btn');
+                btn.style.background = '#f39c12';
+                btn.textContent = '⏳ Stopping...';
+
+                await fetch('/api/stop', { method: 'POST' });
+
+                btn.style.background = '#27ae60';
+                btn.textContent = '✅ Stopped';
+                addLogEntry('system', 'Emergency stop activated');
+
+                setTimeout(() => {
+                    btn.style.background = '#e74c3c';
+                    btn.textContent = '🛑 STOP';
+                }, 2000);
+            } catch (e) {
+                const btn = document.getElementById('stop-btn');
+                btn.style.background = '#e74c3c';
+                btn.textContent = '🛑 STOP';
+                addLogEntry('system', 'Stop command failed: ' + e.message);
+            }
+        }
+
+        async function refreshFrame() {
+            try {
+                const resp = await fetch('/api/frame');
+                if (resp.ok) {
+                    const blob = await resp.blob();
+                    const url = URL.createObjectURL(blob);
+                    const container = document.getElementById('frame-container');
+                    container.innerHTML = `<img src="${url}" alt="Stereo frame" />`;
+                }
+            } catch (e) {
+                // silently ignore frame fetch errors
+            }
+        }
+
+        async function refreshStatus() {
+            try {
+                const resp = await fetch('/api/status');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    document.getElementById('s-uptime').textContent = formatDuration(data.uptime_secs);
+                    document.getElementById('s-maxspeed').textContent = data.max_speed.toFixed(2);
+                    document.getElementById('s-watchdog').textContent = data.watchdog_timeout_secs + 's';
+                    document.getElementById('s-lastcmd').textContent = data.last_command_at ? timeAgo(data.last_command_at) : '—';
+                    document.getElementById('s-lastcap').textContent = data.last_capture_at ? timeAgo(data.last_capture_at) : '—';
+                    document.getElementById('s-history').textContent = data.history_entries;
+
+                    const badge = document.getElementById('status-badge');
+                    badge.className = 'status-badge status-online';
+                    badge.textContent = 'Online';
+                }
+            } catch (e) {
+                const badge = document.getElementById('status-badge');
+                badge.className = 'status-badge status-offline';
+                badge.textContent = 'Offline';
+            }
+        }
+
+        async function refreshHistory() {
+            try {
+                const resp = await fetch('/api/history?count=20');
+                if (resp.ok) {
+                    const entries = await resp.json();
+                    const container = document.getElementById('history-entries');
+
+                    if (entries.length !== lastHistoryCount) {
+                        lastHistoryCount = entries.length;
+                        container.innerHTML = entries.map(entry => {
+                            const reasoning = entry.reasoning.length > 0
+                                ? entry.reasoning[entry.reasoning.length - 1]
+                                : 'No reasoning logged';
+                            const cmd = entry.command
+                                ? `L:${entry.command.left.toFixed(2)} R:${entry.command.right.toFixed(2)}`
+                                : 'no command';
+                            return `<div class="history-item">
+                                <div class="time">${formatTime(entry.timestamp)}</div>
+                                <div class="summary">${reasoning.substring(0, 60)}${reasoning.length > 60 ? '...' : ''}</div>
+                                <div class="summary" style="color: #e94560">${cmd}</div>
+                            </div>`;
+                        }).join('');
+
+                        // Add log entries for new items
+                        if (entries.length > 0) {
+                            const latest = entries[0];
+                            latest.reasoning.forEach(r => addLogEntry('reasoning', r));
+                            if (latest.command) {
+                                addLogEntry('command', `drive(${latest.command.left.toFixed(2)}, ${latest.command.right.toFixed(2)})`);
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                // silently ignore
+            }
+        }
+
+        function addLogEntry(type, message) {
+            const container = document.getElementById('log-entries');
+            const now = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `<span class="timestamp">${now}</span>${escapeHtml(message)}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+
+            // Keep only last 100 entries
+            while (container.children.length > 100) {
+                container.removeChild(container.firstChild);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDuration(secs) {
+            if (secs < 60) return secs + 's';
+            if (secs < 3600) return Math.floor(secs / 60) + 'm ' + (secs % 60) + 's';
+            return Math.floor(secs / 3600) + 'h ' + Math.floor((secs % 3600) / 60) + 'm';
+        }
+
+        function formatTime(isoString) {
+            return new Date(isoString).toLocaleTimeString();
+        }
+
+        function timeAgo(isoString) {
+            const secs = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+            if (secs < 5) return 'just now';
+            if (secs < 60) return secs + 's ago';
+            if (secs < 3600) return Math.floor(secs / 60) + 'm ago';
+            return Math.floor(secs / 3600) + 'h ago';
+        }
+
+        // Polling loop
+        setInterval(() => {
+            refreshFrame();
+            refreshStatus();
+            refreshHistory();
+        }, POLL_INTERVAL);
+
+        // Initial fetch
+        refreshStatus();
+        refreshHistory();
+    </script>
+</body>
+</html>
