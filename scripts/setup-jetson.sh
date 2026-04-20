@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
+
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Michael Schaefer <https://github.com/mischa-robots/agentic-robot>
+#
 # Setup script for installing agentic-robot on a Jetson Nano.
 #
 # Run this on the Jetson Nano after cloning the repo:

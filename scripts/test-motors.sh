@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
+
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Michael Schaefer <https://github.com/mischa-robots/agentic-robot>
+#
 # Motor test script — moves robot in a simple pattern to verify wiring.
 #
 # Pattern: forward 1s → backward 1s → spin right 1s → spin left 1s → stop
@@ -18,7 +20,19 @@
 
 set -euo pipefail
 
-BINARY="agentic-robot"
+# Resolve binary: prefer PATH, fall back to release/debug build in project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+if command -v agentic-robot &>/dev/null; then
+    BINARY="agentic-robot"
+elif [[ -x "$PROJECT_ROOT/target/release/agentic-robot" ]]; then
+    BINARY="$PROJECT_ROOT/target/release/agentic-robot"
+elif [[ -x "$PROJECT_ROOT/target/debug/agentic-robot" ]]; then
+    BINARY="$PROJECT_ROOT/target/debug/agentic-robot"
+else
+    echo "ERROR: agentic-robot binary not found. Build with: cargo build --release"
+    exit 1
+fi
 SPEED="${1:-0.6}"
 DURATION=1
 

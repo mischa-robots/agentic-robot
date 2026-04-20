@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
+
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Michael Schaefer <https://github.com/mischa-robots/agentic-robot>
+#
 # Autonomous robot loop — launches Copilot CLI with the robot prompt.
 #
 # Usage:
@@ -14,7 +16,19 @@
 
 set -euo pipefail
 
-BINARY="agentic-robot"
+# Resolve binary: prefer PATH, fall back to release/debug build in project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+if command -v agentic-robot &>/dev/null; then
+    BINARY="agentic-robot"
+elif [[ -x "$PROJECT_ROOT/target/release/agentic-robot" ]]; then
+    BINARY="$PROJECT_ROOT/target/release/agentic-robot"
+elif [[ -x "$PROJECT_ROOT/target/debug/agentic-robot" ]]; then
+    BINARY="$PROJECT_ROOT/target/debug/agentic-robot"
+else
+    echo "ERROR: agentic-robot binary not found. Build with: cargo build --release"
+    exit 1
+fi
 
 # Verify daemon is running
 if ! "$BINARY" status &>/dev/null; then

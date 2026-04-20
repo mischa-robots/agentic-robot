@@ -71,6 +71,20 @@ agentic-robot daemon --port 9090
 agentic-robot daemon --left-factor -1.0 --right-factor 1.0
 ```
 
+### Stop or Restart the Daemon
+
+```bash
+# Stop the daemon (Ctrl+C if running in foreground, or send SIGTERM)
+kill $(pgrep -f "agentic-robot daemon")
+
+# The daemon stops all motors on shutdown (graceful).
+# To restart, simply run the daemon command again:
+agentic-robot daemon
+```
+
+The daemon binds to a Unix socket at `/tmp/agentic-robot.sock`. If a stale socket
+file exists from a crash, the daemon removes it on startup automatically.
+
 ### CLI Commands (used by Copilot CLI)
 
 ```bash
@@ -150,6 +164,23 @@ cargo test -- --nocapture
 # Run clippy lints
 cargo clippy --all-targets -- -D warnings
 ```
+
+### Motor Test Script
+
+Use `scripts/test-motors.sh` to verify motor wiring and direction after assembly:
+
+```bash
+# Default speed (0.6)
+./scripts/test-motors.sh
+
+# Custom speed
+./scripts/test-motors.sh 0.7
+```
+
+The script runs a simple pattern (forward → backward → spin right → spin left → stop)
+and tells you how to fix reversed motors with `--left-factor` / `--right-factor` flags.
+
+> **Note:** The daemon must be running before you run this script.
 
 ## Architecture
 
