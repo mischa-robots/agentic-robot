@@ -20,7 +20,7 @@ hardware = ["camera", "pca9685"]
 
 [dependencies]
 robot-control = "0.1.0"
-opencv = { version = "0.93", default-features = false, features = ["clang-runtime"], optional = true }
+opencv = { version = "0.93", default-features = false, features = ["clang-runtime", "videoio", "imgcodecs"], optional = true }
 clap = { version = "4", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 actix-web = "4"
