@@ -8,6 +8,8 @@
 //! [`MockCapture`] provides a test double.
 
 use std::path::{Path, PathBuf};
+#[cfg(feature = "camera")]
+use std::sync::Mutex;
 
 use crate::error::AppError;
 
@@ -43,12 +45,13 @@ pub struct GStreamerCapture {
     right_pipeline: String,
     width: u32,
     height: u32,
-    // OpenCV VideoCapture handles would be stored here
-    // Using Option to allow lazy initialization
+    // OpenCV VideoCapture handles wrapped in Mutex for Sync safety.
+    // VideoCapture contains *mut c_void which isn't Sync, but is only
+    // accessed via &mut self so the Mutex is uncontended.
     #[cfg(feature = "camera")]
-    left_cap: Option<opencv::videoio::VideoCapture>,
+    left_cap: Mutex<Option<opencv::videoio::VideoCapture>>,
     #[cfg(feature = "camera")]
-    right_cap: Option<opencv::videoio::VideoCapture>,
+    right_cap: Mutex<Option<opencv::videoio::VideoCapture>>,
 }
 
 impl GStreamerCapture {
@@ -65,9 +68,9 @@ impl GStreamerCapture {
             width,
             height,
             #[cfg(feature = "camera")]
-            left_cap: None,
+            left_cap: Mutex::new(None),
             #[cfg(feature = "camera")]
-            right_cap: None,
+            right_cap: Mutex::new(None),
         }
     }
 }
@@ -90,28 +93,31 @@ impl CameraCapture for GStreamerCapture {
         use opencv::prelude::*;
         use opencv::videoio::{self, VideoCaptureTrait, VideoCaptureTraitConst};
 
+        let mut left_guard = self.left_cap.lock().unwrap();
+        let mut right_guard = self.right_cap.lock().unwrap();
+
         // Initialize cameras lazily
-        if self.left_cap.is_none() {
+        if left_guard.is_none() {
             let left = videoio::VideoCapture::from_file(&self.left_pipeline, videoio::CAP_GSTREAMER)
                 .map_err(|e| AppError::Camera(format!("left camera init failed: {e}")))?;
             if !left.is_opened().unwrap_or(false) {
                 return Err(AppError::Camera("left camera not opened".to_string()));
             }
-            self.left_cap = Some(left);
+            *left_guard = Some(left);
         }
 
-        if self.right_cap.is_none() {
+        if right_guard.is_none() {
             let right =
                 videoio::VideoCapture::from_file(&self.right_pipeline, videoio::CAP_GSTREAMER)
                     .map_err(|e| AppError::Camera(format!("right camera init failed: {e}")))?;
             if !right.is_opened().unwrap_or(false) {
                 return Err(AppError::Camera("right camera not opened".to_string()));
             }
-            self.right_cap = Some(right);
+            *right_guard = Some(right);
         }
 
-        let left_cap = self.left_cap.as_mut().unwrap();
-        let right_cap = self.right_cap.as_mut().unwrap();
+        let left_cap = left_guard.as_mut().unwrap();
+        let right_cap = right_guard.as_mut().unwrap();
 
         // Capture frames
         let mut left_frame = Mat::default();
@@ -148,8 +154,8 @@ impl CameraCapture for GStreamerCapture {
     }
 
     fn release(&mut self) {
-        self.left_cap = None;
-        self.right_cap = None;
+        *self.left_cap.lock().unwrap() = None;
+        *self.right_cap.lock().unwrap() = None;
     }
 }
 
