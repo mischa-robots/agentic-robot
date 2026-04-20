@@ -30,8 +30,10 @@ enum Command {
     /// Send a drive command to the motors
     Drive {
         /// Left motor speed (-1.0 to 1.0)
+        #[arg(allow_negative_numbers = true)]
         left: f32,
         /// Right motor speed (-1.0 to 1.0)
+        #[arg(allow_negative_numbers = true)]
         right: f32,
     },
 
@@ -84,6 +86,68 @@ enum Command {
         #[arg(long, default_value_t = 5)]
         watchdog_timeout: u64,
     },
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn drive_accepts_positive_speeds() {
+        let cli = Cli::try_parse_from(["agentic-robot", "drive", "0.6", "0.6"]);
+        assert!(cli.is_ok());
+        let cli = cli.unwrap();
+        match cli.command {
+            Command::Drive { left, right } => {
+                assert!((left - 0.6).abs() < f32::EPSILON);
+                assert!((right - 0.6).abs() < f32::EPSILON);
+            }
+            _ => panic!("expected Drive command"),
+        }
+    }
+
+    #[test]
+    fn drive_accepts_negative_speeds() {
+        let cli = Cli::try_parse_from(["agentic-robot", "drive", "-0.6", "-0.6"]);
+        assert!(cli.is_ok());
+        let cli = cli.unwrap();
+        match cli.command {
+            Command::Drive { left, right } => {
+                assert!((left - (-0.6)).abs() < f32::EPSILON);
+                assert!((right - (-0.6)).abs() < f32::EPSILON);
+            }
+            _ => panic!("expected Drive command"),
+        }
+    }
+
+    #[test]
+    fn drive_accepts_mixed_speeds() {
+        let cli = Cli::try_parse_from(["agentic-robot", "drive", "0.6", "-0.6"]);
+        assert!(cli.is_ok());
+    }
+
+    #[test]
+    fn stop_command_parses() {
+        let cli = Cli::try_parse_from(["agentic-robot", "stop"]);
+        assert!(cli.is_ok());
+        assert!(matches!(cli.unwrap().command, Command::Stop));
+    }
+
+    #[test]
+    fn capture_command_parses() {
+        let cli = Cli::try_parse_from(["agentic-robot", "capture"]);
+        assert!(cli.is_ok());
+    }
+
+    #[test]
+    fn log_command_parses() {
+        let cli = Cli::try_parse_from(["agentic-robot", "log", "wall ahead, turning right"]);
+        assert!(cli.is_ok());
+        match cli.unwrap().command {
+            Command::Log { message } => assert_eq!(message, "wall ahead, turning right"),
+            _ => panic!("expected Log command"),
+        }
+    }
 }
 
 #[tokio::main]
