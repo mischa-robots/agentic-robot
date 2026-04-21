@@ -58,9 +58,10 @@ impl GStreamerCapture {
     /// Create a new capture instance for the given resolution.
     ///
     /// Cameras are initialized lazily on first capture.
-    pub fn new(width: u32, height: u32) -> Self {
-        let left_pipeline = gstreamer_pipeline(0, width, height);
-        let right_pipeline = gstreamer_pipeline(1, width, height);
+    pub fn new(width: u32, height: u32, swap_cameras: bool) -> Self {
+        let (left_sensor_id, right_sensor_id) = sensor_ids(swap_cameras);
+        let left_pipeline = gstreamer_pipeline(left_sensor_id, width, height);
+        let right_pipeline = gstreamer_pipeline(right_sensor_id, width, height);
 
         Self {
             left_pipeline,
@@ -73,6 +74,10 @@ impl GStreamerCapture {
             right_cap: Mutex::new(None),
         }
     }
+}
+
+fn sensor_ids(swap_cameras: bool) -> (u32, u32) {
+    if swap_cameras { (1, 0) } else { (0, 1) }
 }
 
 /// Build a GStreamer pipeline string for nvarguscamerasrc.
@@ -323,5 +328,16 @@ mod tests {
         assert!(pipeline.contains("max-buffers=1"));
         assert!(pipeline.contains("drop=true"));
         assert!(pipeline.contains("leaky=downstream"));
+    }
+
+    #[test]
+    fn camera_swap_reverses_sensor_ids() {
+        let default_capture = GStreamerCapture::new(640, 480, false);
+        assert!(default_capture.left_pipeline.contains("sensor-id=0"));
+        assert!(default_capture.right_pipeline.contains("sensor-id=1"));
+
+        let swapped_capture = GStreamerCapture::new(640, 480, true);
+        assert!(swapped_capture.left_pipeline.contains("sensor-id=1"));
+        assert!(swapped_capture.right_pipeline.contains("sensor-id=0"));
     }
 }

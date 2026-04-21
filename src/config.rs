@@ -29,6 +29,7 @@ pub struct DaemonConfig {
     pub i2c_addr: u8,
     pub left_factor: f32,
     pub right_factor: f32,
+    pub swap_cameras: bool,
     pub max_speed: f32,
     pub watchdog_timeout_secs: u64,
 }
@@ -42,6 +43,7 @@ impl Default for DaemonConfig {
             i2c_addr: 0x60,
             left_factor: -1.0,
             right_factor: 1.0,
+            swap_cameras: false,
             max_speed: 0.8,
             watchdog_timeout_secs: 5,
         }

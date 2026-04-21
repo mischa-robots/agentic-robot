@@ -102,7 +102,7 @@ pub async fn run(config: DaemonConfig) -> Result<()> {
 
     // Initialize camera
     let camera: Arc<Mutex<Box<dyn CameraCapture>>> = Arc::new(Mutex::new(Box::new(
-        GStreamerCapture::new(640, 480),
+        GStreamerCapture::new(640, 480, config.swap_cameras),
     )));
 
     // Spawn watchdog task

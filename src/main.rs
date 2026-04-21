@@ -78,6 +78,10 @@ enum Command {
         #[arg(long, default_value_t = 1.0, allow_negative_numbers = true)]
         right_factor: f32,
 
+        /// Swap left/right camera sensor mapping
+        #[arg(long)]
+        swap: bool,
+
         /// Maximum allowed speed (0.5 to 1.0) for safety
         #[arg(long, default_value_t = 0.8)]
         max_speed: f32,
@@ -200,10 +204,26 @@ mod tests {
         let cli = Cli::try_parse_from(["agentic-robot", "daemon"]);
         assert!(cli.is_ok());
         match cli.unwrap().command {
-            Command::Daemon { left_factor, right_factor, .. } => {
+            Command::Daemon {
+                left_factor,
+                right_factor,
+                swap,
+                ..
+            } => {
                 assert!((left_factor - (-1.0)).abs() < f32::EPSILON);
                 assert!((right_factor - 1.0).abs() < f32::EPSILON);
+                assert!(!swap);
             }
+            _ => panic!("expected Daemon command"),
+        }
+    }
+
+    #[test]
+    fn daemon_accepts_swap_flag() {
+        let cli = Cli::try_parse_from(["agentic-robot", "daemon", "--swap"]);
+        assert!(cli.is_ok());
+        match cli.unwrap().command {
+            Command::Daemon { swap, .. } => assert!(swap),
             _ => panic!("expected Daemon command"),
         }
     }
@@ -229,6 +249,7 @@ async fn main() -> Result<()> {
             i2c_addr,
             left_factor,
             right_factor,
+            swap,
             max_speed,
             watchdog_timeout,
         } => {
@@ -239,6 +260,7 @@ async fn main() -> Result<()> {
                 i2c_addr,
                 left_factor,
                 right_factor,
+                swap,
                 max_speed,
                 watchdog_timeout,
             )

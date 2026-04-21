@@ -69,6 +69,9 @@ agentic-robot daemon --port 9090
 
 # Reverse motor direction if wiring is flipped
 agentic-robot daemon --left-factor -1.0 --right-factor 1.0
+
+# Swap left/right camera mapping if the CSI sensors are reversed
+agentic-robot daemon --swap
 ```
 
 ### Stop or Restart the Daemon

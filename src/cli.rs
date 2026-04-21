@@ -109,6 +109,7 @@ pub async fn daemon(
     i2c_addr: u8,
     left_factor: f32,
     right_factor: f32,
+    swap: bool,
     max_speed: f32,
     watchdog_timeout: u64,
 ) -> Result<()> {
@@ -119,6 +120,7 @@ pub async fn daemon(
         i2c_addr,
         left_factor,
         right_factor,
+        swap_cameras: swap,
         max_speed,
         watchdog_timeout_secs: watchdog_timeout,
     };
