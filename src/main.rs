@@ -71,11 +71,11 @@ enum Command {
         i2c_addr: u8,
 
         /// Left motor speed factor (-1.0 to reverse polarity)
-        #[arg(long, default_value_t = -1.0)]
+        #[arg(long, default_value_t = -1.0, allow_negative_numbers = true)]
         left_factor: f32,
 
         /// Right motor speed factor (-1.0 to reverse polarity)
-        #[arg(long, default_value_t = 1.0)]
+        #[arg(long, default_value_t = 1.0, allow_negative_numbers = true)]
         right_factor: f32,
 
         /// Maximum allowed speed (0.5 to 1.0) for safety
@@ -146,6 +146,65 @@ mod tests {
         match cli.unwrap().command {
             Command::Log { message } => assert_eq!(message, "wall ahead, turning right"),
             _ => panic!("expected Log command"),
+        }
+    }
+
+    #[test]
+    fn daemon_accepts_negative_left_factor() {
+        let cli = Cli::try_parse_from([
+            "agentic-robot", "daemon", "--left-factor", "-1.0",
+        ]);
+        assert!(cli.is_ok());
+        match cli.unwrap().command {
+            Command::Daemon { left_factor, .. } => {
+                assert!((left_factor - (-1.0)).abs() < f32::EPSILON);
+            }
+            _ => panic!("expected Daemon command"),
+        }
+    }
+
+    #[test]
+    fn daemon_accepts_negative_right_factor() {
+        let cli = Cli::try_parse_from([
+            "agentic-robot", "daemon", "--right-factor", "-1.0",
+        ]);
+        assert!(cli.is_ok());
+        match cli.unwrap().command {
+            Command::Daemon { right_factor, .. } => {
+                assert!((right_factor - (-1.0)).abs() < f32::EPSILON);
+            }
+            _ => panic!("expected Daemon command"),
+        }
+    }
+
+    #[test]
+    fn daemon_accepts_both_negative_factors() {
+        let cli = Cli::try_parse_from([
+            "agentic-robot", "daemon",
+            "--left-factor", "-1.0",
+            "--right-factor", "-1.0",
+        ]);
+        assert!(cli.is_ok());
+        match cli.unwrap().command {
+            Command::Daemon { left_factor, right_factor, .. } => {
+                assert!((left_factor - (-1.0)).abs() < f32::EPSILON);
+                assert!((right_factor - (-1.0)).abs() < f32::EPSILON);
+            }
+            _ => panic!("expected Daemon command"),
+        }
+    }
+
+    #[test]
+    fn daemon_default_left_factor_is_negative() {
+        // Default is -1.0 — ensure it round-trips without explicit flag
+        let cli = Cli::try_parse_from(["agentic-robot", "daemon"]);
+        assert!(cli.is_ok());
+        match cli.unwrap().command {
+            Command::Daemon { left_factor, right_factor, .. } => {
+                assert!((left_factor - (-1.0)).abs() < f32::EPSILON);
+                assert!((right_factor - 1.0).abs() < f32::EPSILON);
+            }
+            _ => panic!("expected Daemon command"),
         }
     }
 }

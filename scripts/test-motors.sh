@@ -5,7 +5,16 @@
 #
 # Motor test script — moves robot in a simple pattern to verify wiring.
 #
-# Pattern: forward 1s → backward 1s → spin right 1s → spin left 1s → stop
+# Pattern:
+#       right motor forward 1s
+#       right motor backward 1s
+#       left motor forward 1s
+#       left motor backward 1s
+#       forward 1s
+#       backward 1s
+#       spin right 1s
+#       spin left 1s
+#       stop
 #
 # Prerequisites:
 #   1. The daemon must be running: agentic-robot daemon
@@ -49,19 +58,35 @@ fi
 echo "Starting in 3 seconds — make sure the robot has clearance!"
 sleep 3
 
-echo "1/4 — Forward..."
+echo "Right motor forward..."
+"$BINARY" drive "0" "$SPEED"
+sleep "$DURATION"
+
+echo "Right motor backward..."
+"$BINARY" drive "0" "-$SPEED"
+sleep "$DURATION"
+
+echo "Left motor forward..."
+"$BINARY" drive "$SPEED" "0"
+sleep "$DURATION"
+
+echo "Left motor backward..."
+"$BINARY" drive "-$SPEED" "0"
+sleep "$DURATION"
+
+echo "Robot forward..."
 "$BINARY" drive "$SPEED" "$SPEED"
 sleep "$DURATION"
 
-echo "2/4 — Backward..."
+echo "Robot backward..."
 "$BINARY" drive "-$SPEED" "-$SPEED"
 sleep "$DURATION"
 
-echo "3/4 — Spin right..."
+echo "Robot spin right..."
 "$BINARY" drive "$SPEED" "-$SPEED"
 sleep "$DURATION"
 
-echo "4/4 — Spin left..."
+echo "Robot spin left..."
 "$BINARY" drive "-$SPEED" "$SPEED"
 sleep "$DURATION"
 
@@ -72,12 +97,14 @@ echo ""
 echo "=== Test complete ==="
 echo ""
 echo "Expected behavior:"
-echo "  1. Robot moved forward"
-echo "  2. Robot moved backward"
-echo "  3. Robot spun clockwise (right)"
-echo "  4. Robot spun counter-clockwise (left)"
+echo "  Right motor spun forward, then backward"
+echo "  Left motor spun forward, then backward"
+echo "  Robot moved forward"
+echo "  Robot moved backward"
+echo "  Robot spun clockwise (right)"
+echo "  Robot spun counter-clockwise (left)"
 echo ""
 echo "If any direction was wrong, adjust motor factors:"
-echo "  Left reversed:  agentic-robot daemon --left-factor -1.0"
-echo "  Right reversed: agentic-robot daemon --right-factor -1.0"
-echo "  Both reversed:  agentic-robot daemon --left-factor -1.0 --right-factor -1.0"
+echo "  Left reversed:   agentic-robot daemon --left-factor -1.0"
+echo "  Right reversed:  agentic-robot daemon --right-factor -1.0"
+echo "  Both reversed:   agentic-robot daemon --left-factor -1.0 --right-factor -1.0"
