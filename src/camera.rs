@@ -81,7 +81,9 @@ fn gstreamer_pipeline(sensor_id: u32, width: u32, height: u32) -> String {
         "nvarguscamerasrc sensor-id={sensor_id} ! \
          video/x-raw(memory:NVMM),width={width},height={height},framerate=30/1 ! \
          nvvidconv ! video/x-raw,format=BGRx ! \
-         videoconvert ! video/x-raw,format=BGR ! appsink"
+         videoconvert ! video/x-raw,format=BGR ! \
+         queue max-size-buffers=1 leaky=downstream ! \
+         appsink max-buffers=1 drop=true sync=false"
     )
 }
 
@@ -318,5 +320,8 @@ mod tests {
         assert!(pipeline.contains("height=480"));
         assert!(pipeline.contains("nvarguscamerasrc"));
         assert!(pipeline.contains("appsink"));
+        assert!(pipeline.contains("max-buffers=1"));
+        assert!(pipeline.contains("drop=true"));
+        assert!(pipeline.contains("leaky=downstream"));
     }
 }
